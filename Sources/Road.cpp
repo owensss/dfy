@@ -58,4 +58,7 @@ void Road::PlayerComeIn(Player * p)
 
 void Road::ReadStream(std::istream& is)
 {
+#ifdef _DEBUG_
+    std::cout << "Road::ReadStream\n";
+#endif
 }

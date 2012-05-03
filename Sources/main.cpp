@@ -1,4 +1,4 @@
-//#define _DEBUG_
+#define _DEBUG_
 #include "../Header/Building.hpp"
 #include "../Header/Item.hpp"
 #include "../Header/Player.hpp"
@@ -32,11 +32,13 @@ bool Win(void);
 
 int main()
 {
+try
+{
 	ReadPlayerNum();
 	CreatePlayer();
 	CreateMap();
-	while (Win() == false)
-	{
+    while (Win() == false)
+    {
         for (unsigned i = 0; i < player_num; ++i)
 		{
 			Dice dice;
@@ -50,14 +52,27 @@ int main()
 			}
 			*/
 			map.PlayerGo(players+i, dice);
-		} } }
+        }
+    }
+
+    return 0;
+}
+catch (const char* err)
+{
+    cerr << err;
+}
+}
 
 void ReadPlayerNum(void)
 {
+    player_num = 0;
 }
 
 void CreatePlayer(void)
 {
+#ifdef _DEBUG_
+    cout << "Reading Player.data\n";
+#endif
 	fstream fs("players.data", fstream::in);
 	if (!fs.is_open()) throw "unable to open players.data!\n";
 	// TODO: ReadPlayer num here
@@ -74,9 +89,15 @@ void CreateMap(void)
 	// Readin Player initial pos
 	// Items
 	// etc
+#ifdef _DEBUG_
+    cout << "Reading Map\n";
+#endif
     map.ReadStream(fs);
     for (unsigned i = 0; i < player_num; ++i)
 	{
+#ifdef _DEBUG_
+        cout << "Reading Player\n";
+#endif
 		map.AddPlayer(players+i);
 	}
 }

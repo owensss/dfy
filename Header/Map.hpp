@@ -26,15 +26,15 @@ class Map
 		void AddPlayer(Player * p);
 		void SetPlayerNum(int num);
 		// reset map
-		void Clean(void);
+        void Clean(void);
 	private:
-		Item*** map;
-		MapPlayer* mplayer;
+        Item*** map;
+        MapPlayer* mplayer;
 		unsigned player_num;
         int row;
         int col;
 	private:
-		Road * init_road;
+        Road * init_road;
 };
 
 #endif

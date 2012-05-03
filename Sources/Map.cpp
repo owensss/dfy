@@ -1,3 +1,4 @@
+#define _DEBUG_
 #include "../Header/Map.hpp"
 #include <string>
 #include <typeinfo>
@@ -5,9 +6,9 @@ using namespace std;
 
 Map::Map()
 {
-	mplayer = NULL;
+    mplayer = NULL;
 	player_num = 1;
-	map = NULL;
+    map = NULL;
 }
 
 Map::~Map() {}
@@ -15,6 +16,9 @@ Map::~Map() {}
 // this functions shall be written after all other classes are imped
 void Map::ReadStream(std::istream& is)
 {
+#ifdef _DEBUG_
+    cout << "entering map::readStream\n";
+#endif
 	// first Line is x, y
     is >> col >> row;
     map = new Item**[col];
@@ -24,10 +28,15 @@ void Map::ReadStream(std::istream& is)
         map[i] = new Item*[col];
         for (int j = 0; j < row; ++j)
 		{
-			cin >> type;
+            is >> type;
 			// listing types
 			if (type == "Road")
+            {
+#ifdef _DEBUG_
+                cout << "Reading Road\n" ;
+#endif
                 map[i][j] = new Road();
+            }
 			// ReadStream
             map[i][j]->ReadStream(is);
 		}
@@ -38,33 +47,46 @@ void Map::ReadStream(std::istream& is)
     int x1, y1;
     int x2, y2;
     is >> y1 >> x1;
-    if (typeid(map[y1][x1]) == typeid(Road*))
+    if (typeid(*map[y1][x1]) == typeid(Road))
     {
-        init_road = dynamic_cast<Road*> (map[y1][x1]);
+#ifdef _DEBUG_
+        cout << "Creating initRoad" << y1 << ":" << x1 << endl;
+#endif
+        init_road = dynamic_cast<Road*>(map[y1][x1]);
     }
     else
-        throw "not a valid init road position;\n";
+    {throw "not a valid init road position;\n";}
+
     do
     {
-        is >> x1 >> y1;
+        is >> y1 >> x1;
         is >> y2 >> x2;
+#ifdef _DEBUG_
+        cout<<"("<<y1<<", "<<x1<<") ("<<y2<<", "<<x2<<")\n";
+#endif
+
+        if (y1 == -1 || x1 == -1 || y2 == -1 || x2 == -1) break;
+
         // if is_road
-        if (typeid(map[y1][x1]) != typeid(Road*)
-          ||typeid(map[y2][x2]) != typeid(Road*))
+        if (typeid(*map[y1][x1]) == typeid(Road)
+          &&typeid(*map[y2][x2]) == typeid(Road))
         {
-            // maybe shall write to log
+#ifdef _DEBUG_
+            cout << "Creating Road Route For (" << y1 << ", " << x1 << ")\n";
+#endif
+            dynamic_cast<Road*>(map[y1][x1])->
+                    SetNext(dynamic_cast<Road*>(map[y2][x2]));
+        }
+        else
+        {
+        // maybe shall write to log
 #ifdef _DEBUG_
             cout<<"position ("<<y1<<", "<<x1<<") or ("<<y2<<", "<<x2
                << "not a valid position\n";
 #endif
         }
-        else
-        {
-            dynamic_cast<Road*>(map[y1][x1])->
-                    SetNext(dynamic_cast<Road*>(map[y2][x2]));
-        }
     // ends with a -1
-    } while (y1 != -1 || x1 != -1 || x2 != -1 || y2 != -1);
+    } while (y1 != -1 && x1 != -1 && y2 != -1 && x2 != -1);
     // end while read road pos
 }
 
