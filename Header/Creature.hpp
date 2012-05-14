@@ -2,15 +2,19 @@
 #define _CREATURE_HPP_
 #include "Item.hpp"
 #include "Player.hpp"
+//#include "Map.hpp"
 
 class Player;
+class Map;
 
 class Creature : public Item
 {
 	public:
 		Creature();
 		~Creature();
+        virtual Trigger RegTrigger(Map*, Road*) = 0;
 		virtual void ReadStream(std::istream& is);
+        virtual void advance(int phase) {};
 		// if not able to, return false
         bool CanTame(Player * _owner) {return tame;}
         void SetTame(bool can = false) {tame = can;}

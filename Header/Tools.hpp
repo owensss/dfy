@@ -1,5 +1,5 @@
-#ifndef _TOOLS_HPP
-#define _TOOLS_HPP
+#ifndef _TOOLS_HPP_
+#define _TOOLS_HPP_
 #include "Player.hpp"
 #include "Item.hpp"
 

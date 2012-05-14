@@ -9,6 +9,7 @@ Map::Map()
     mplayer = NULL;
 	player_num = 1;
     map = NULL;
+    cur_player = 0;
 }
 
 Map::~Map() {}
@@ -20,74 +21,19 @@ void Map::ReadStream(std::istream& is)
     cout << "entering map::readStream\n";
 #endif
 	// first Line is x, y
-    is >> col >> row;
-    map = new Item**[col];
+    is >> row >> col;
+    map = new MapItem*[row];
 	string type;
-    for (int i = 0; i < col; ++i)
+    // read each items
+    for (int i = 0; i < row; ++i)
 	{
-        map[i] = new Item*[col];
-        for (int j = 0; j < row; ++j)
-		{
-            is >> type;
-			// listing types
-			if (type == "Road")
-            {
-#ifdef _DEBUG_
-                cout << "Reading Road\n" ;
-#endif
-                map[i][j] = new Road();
-            }
-			// ReadStream
-            map[i][j]->ReadStream(is);
-		}
+        map[i] = new MapItem[row];
+        for (int j = 0; j < col; ++j)
+            ReadItem(is, i, j);
     }
-
-    // read road route
-    // init position
-    int x1, y1;
-    int x2, y2;
-    is >> y1 >> x1;
-    if (typeid(*map[y1][x1]) == typeid(Road))
-    {
-#ifdef _DEBUG_
-        cout << "Creating initRoad" << y1 << ":" << x1 << endl;
-#endif
-        init_road = dynamic_cast<Road*>(map[y1][x1]);
-    }
-    else
-    {throw "not a valid init road position;\n";}
-
-    do
-    {
-        is >> y1 >> x1;
-        is >> y2 >> x2;
-#ifdef _DEBUG_
-        cout<<"("<<y1<<", "<<x1<<") ("<<y2<<", "<<x2<<")\n";
-#endif
-
-        if (y1 == -1 || x1 == -1 || y2 == -1 || x2 == -1) break;
-
-        // if is_road
-        if (typeid(*map[y1][x1]) == typeid(Road)
-          &&typeid(*map[y2][x2]) == typeid(Road))
-        {
-#ifdef _DEBUG_
-            cout << "Creating Road Route For (" << y1 << ", " << x1 << ")\n";
-#endif
-            dynamic_cast<Road*>(map[y1][x1])->
-                    SetNext(dynamic_cast<Road*>(map[y2][x2]));
-        }
-        else
-        {
-        // maybe shall write to log
-#ifdef _DEBUG_
-            cout<<"position ("<<y1<<", "<<x1<<") or ("<<y2<<", "<<x2
-               << "not a valid position\n";
-#endif
-        }
-    // ends with a -1
-    } while (y1 != -1 && x1 != -1 && y2 != -1 && x2 != -1);
-    // end while read road pos
+    ReadInitRoad(is);
+    ReadRoadRoute(is);
+    ReadTrigger(is);
 }
 
 // score is the number of shaizi - -b
@@ -101,6 +47,7 @@ void Map::PlayerGo(Player * p, unsigned score)
 			for (unsigned i = 0; i < score; ++i)
 			{
 				pi->road = pi->road->Next();
+                pi->road->PlayerByPass(pi->player);
 			}
 			pi->road->PlayerComeIn(pi->player);
 			break;
@@ -133,6 +80,13 @@ void Map::AddPlayer(Player * p)
 		{
 			mplayer[i].player = p;
 			mplayer[i].road = init_road;
+            mplayer[i].player->SetX(init_road->GetX());
+            mplayer[i].player->SetY(init_road->GetY());
+            mplayer[i].player->SetID(i);
+            break;
+#ifdef _DEBUG_ADD_PLAYER_
+            cout << "init Player, id: " << mplayer[i].player->GetID() << " at " << i << endl;
+#endif
 		}
 	}
 }
@@ -143,14 +97,167 @@ void Map::Clean(void)
 	// TODO: ADD Clean Code here
 	if (map)
 	{
-        for (int i = 0; i < col; i++)
-		{
-            for (int j = 0; j < row; j++)
-                delete map[i][j];
-            delete [] map[i];
-		}
+        for (int i = 0; i < row; i++)
+			delete map[i];
         delete [] map;
 	}
 	
-	delete [] mplayer;
+	if (mplayer)
+		delete [] mplayer;
+}
+
+void Map::SetCurrentPlayer(Player *p)
+{
+    for (unsigned i = 0; i < player_num; ++i)
+        if (mplayer->player == p)
+        {
+            cur_player = i;
+
+            break;
+        }
+}
+
+void Map::ReadItem(istream& is, int y, int x)
+{
+    string type;
+    is >> type;
+    // listing types
+    if (type == "Road")
+    {
+#ifdef _DEBUG_READ_ITEM_
+        cout << "Reading Road\n" ;
+#endif
+        map[y][x].type = tRoad;
+        map[y][x].it.road = new Road();
+        map[y][x].it.road->ReadStream(is);
+        map[y][x].it.road->SetX(x);
+        map[y][x].it.road->SetY(y);
+    }
+    if (type == "Blank")
+    {
+#ifdef _DEBUG_READ_ITEM_
+        cout << "Reading Blank\n";
+#endif
+        map[y][x].type = tBlank;
+        map[y][x].it.blank = new Blank();
+        map[y][x].it.blank->ReadStream(is);
+        map[y][x].it.blank->SetX(x);
+        map[y][x].it.blank->SetY(y);
+    }
+    if (type == "Mushboy")
+    {
+#ifdef _DEBUG_
+        cout << "Reading Mush Boy" << endl;
+#endif
+        map[y][x].type = tCreature;
+        map[y][x].it.creature = new Mushboy();
+        map[y][x].it.creature->ReadStream(is);
+        map[y][x].it.creature->SetX(x);
+        map[y][x].it.creature->SetY(y);
+    }
+}
+
+void Map::ReadInitRoad(std::istream& is)
+{
+    // read road route
+    // init position
+    int x, y;
+    is >> y >> x;
+    if (map[y][x].type == tRoad)
+    {
+#ifdef _DEBUG_
+        cout << "Creating initRoad" << y << ":" << x << endl;
+#endif
+        init_road = map[y][x].it.road;
+    }
+    else
+    {
+#ifdef _DEBUG_
+        cout << "init road position not valid" << endl;
+#endif
+        // try to find the init road.
+        bool found = false;
+        int i;
+        int j;
+        for (i = 0; i < row && !found; ++i)
+            for (j = 0; j < col && !found; ++j)
+                if (map[i][j].type == tRoad)
+                {
+                    init_road = map[i][j].it.road;
+                    found = true;
+                }
+        if (!found)
+        {
+#ifdef _DEBUG_
+            cout << "no road found in map. that must not be lligal" << endl;
+#endif
+            throw ExpNoRoadFound(this);
+        }
+        cout << "will select the first found road as init_road"
+            << "that is " << i << ", " << j << endl;
+    }
+}
+
+void Map::ReadRoadRoute(std::istream& is)
+{
+    int y1, x1;
+    int y2, x2;
+    do
+    {
+        is >> y1 >> x1;
+        is >> y2 >> x2;
+#ifdef _DEBUG_
+        cout<<"("<<y1<<", "<<x1<<") ("<<y2<<", "<<x2<<")" << endl;
+#endif
+
+        if (y1 == -1 || x1 == -1 || y2 == -1 || x2 == -1) break;
+
+        // if is_road
+        if ( (map[y1][x1].type == tRoad)
+            &&(map[y2][x2].type == tRoad) )
+
+        {
+#ifdef _DEBUG_
+            cout << "Creating Road Route For (" << y1 << ", " << x1 << ")" << endl;
+#endif
+            map[y1][x1].it.road->
+                    SetNext(map[y2][x2].it.road);
+        }
+        else
+        {
+        // maybe shall write to log
+#ifdef _DEBUG_
+            cout<<"position ("<<y1<<", "<<x1<<") or ("<<y2<<", "<<x2
+               << "not a valid position" << endl;
+#endif
+        }
+    // ends with a -1
+    } while (y1 != -1 && x1 != -1 && y2 != -1 && x2 != -1);
+    // end while read road pos
+}
+
+void Map::ReadTrigger(istream& is)
+{
+    int sx, sy;
+    int dx, dy;
+    do
+    {
+        is >> sy >> sx;
+        is >> dx >> dy;
+        if (sy == -1 || sx == -1 || dx == -1 || dy == -1) return;
+
+        if (map[dy][dx].type != tRoad && map[sy][sx].type == tRoad) return;
+        switch (map[sy][sx].type)
+        {
+            case tNULL:
+            case tRoad:
+            case tBlank:
+                break;
+            case tCreature:
+                map[dy][dx].it.road->AddTrigger(
+                    map[sy][sx].it.creature->RegTrigger
+                            (this, map[dy][dx].it.road)
+                );
+        }
+    } while (1);
 }

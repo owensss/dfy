@@ -1,11 +1,16 @@
 #include "../Header/Player.hpp"
 #include "../Header/Item.hpp"
+#include <QMessageBox>
+#include "../Header/Map.hpp"
+#include "../Header/Creature.hpp"
 
-#define _DEBUG_
-#ifdef _DEBUG_
-#include <iostream>
-void test(Item* sender, Player* reciever)
+void blank_road(Map * map, Item* item, Player* p)
 {
-	std::cout << "Item connected with Player\n";
+;
 }
-#endif
+
+void combat(Map * map, Item* item, Player * p)
+{
+    cout << "combat!" << endl;
+    QMessageBox::warning(0, "warning", "Player and item combat!", QMessageBox::Ok);
+}

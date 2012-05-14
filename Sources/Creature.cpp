@@ -16,6 +16,6 @@ Creature::~Creature()
 
 void Creature::ReadStream(std::istream& is)
 {
-    is >> att >> def >> tame;
+//    is >> att >> def >> tame;
 }
 

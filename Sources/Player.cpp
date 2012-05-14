@@ -5,6 +5,7 @@
 
 Player::Player(long long _money) : money(_money), dead(false)
 {
+    states = 0;
 #ifdef _DEBUG_
 	std::cout << "# Player Create\n";
 #endif
@@ -43,6 +44,7 @@ void Player::Heal(int n)
 	money += n;
 }
 
+/*
 void Player::AddState(const State& state)
 {
 	// no error checking
@@ -56,7 +58,7 @@ void Player::AddState(const State& state)
 		}
 	states.push_back(state);
 	return;
-}
+}*/
 
 bool Player::AddToBag(Tools* tool)
 {
@@ -79,4 +81,15 @@ bool Player::RemoveFromBag(Tools* tool)
 	return false;
 }
 
+//#define _DEBUG_
 void Player::Loop() {}
+
+void Player::advance(int i)
+{
+#ifdef _DEBUG_
+    std::cout << "advance" << std::endl;
+#endif
+    if (x < 0 || y < 0) setVisible(false);
+    else setVisible(true);
+    setPos(x, y);
+}

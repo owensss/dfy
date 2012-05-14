@@ -4,30 +4,39 @@
 #include "Item.hpp"
 #include "Tools.hpp"
 #include <istream>
+#include <string>
 #include <list>
+#include <QGraphicsPixmapItem>
 class Item;
 class Tools;
+
 
 #ifndef _ENUM_STATE_
 const int s_none = 0;
 const int s_trapped = 1;
 const int s_posioned = 2;
+const int s_walk = 4;
+#endif
+
+
+#ifndef _ENUM_PLAYER_TYPE
+const int t_none = 0;
+const int t_mage = 1;
+const int t_warrior = 2;
+const int t_thief = 4;
 #endif
 
 static const unsigned INIT_MONEY = 10000;
 static const unsigned MAX_BAG_SIZE = 10;
 
-struct State
-{
-	int type;
-	int effect;
-	int count;
-	bool operator == (const State& rhs) {return type == rhs.type;}
-};
+//enum State{s_none = 0, s_trapped = 1, s_posioned = 2, s_stop = 4, s_walk = 8};
 
 // replace HP with ... money???
-class Player
+class Player : public QGraphicsPixmapItem
 {
+    public slots:
+        // overloaded virtual function
+        virtual void advance(int i);
 	public:
 		Player(long long _money = INIT_MONEY);
 		virtual ~Player();
@@ -39,7 +48,9 @@ class Player
 		// add(pick up) money
 		virtual void Heal(int n);
 		// posioned, godmod(- -b) etc.
-		virtual void AddState(const State& state);
+        void AddState(unsigned state) { states |= state; }
+        void RemoveState(unsigned state) { states ^= (states&state); }
+        unsigned GetState(void) const {return states; }
 		bool Dead(void) const {return dead;}
 		long long Money(void) const {return money;}
 		unsigned Att(void) {return att;}
@@ -50,6 +61,15 @@ class Player
 		void SubAtt(int value) {def -= value;}
 		void AddDef(int value) {def += value;}
 		void SubDef(int value) {def -= value;}
+		void SetName(std::string _name) {name = _name;}
+        void SetID(unsigned _id) { id = _id; }
+        void SetX(int _x) const { x = _x; }
+        void SetY(int _y) const { y = _y; }
+        int GetX(void) const { return x; }
+        int GetY(void) const { return y; }
+        unsigned GetID(void) const { return id; }
+        void SetType(unsigned _type = 0) { type = _type; }
+        unsigned GetType(void) const { return type; }
 	// bag actions
 	public:
 		// return sucess?
@@ -58,13 +78,17 @@ class Player
 		virtual bool RemoveFromBag(Tools * item);
 		//virtual const std::list<Item*>& listBagItem(void);
 	private:
+		std::string name;
 		int att;
 		int def;
 		long long money;
 		std::list<Tools> bag;
-		std::list<State> states;
+        unsigned states;
 	private:
 		bool dead;
+        unsigned id;
+        unsigned type;
+        mutable int x, y;
 };
 
 #endif

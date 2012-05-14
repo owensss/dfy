@@ -6,12 +6,16 @@
 
 Road::Road() : next(NULL)
 {
+    setPixmap(QPixmap("road.png", "png"));
 }
 
 Road::~Road() {}
 
 void Road::AddTrigger(Trigger tr)
 {
+#ifdef _DEBUG_
+    cout << "RoadAddTrigger" << GetY() << GetX() << endl;
+#endif
     trigger.push_back(tr);
 }
 
@@ -45,6 +49,9 @@ void Road::SetNext(Road* road)
 
 void Road::PlayerComeIn(Player * p)
 {
+#ifdef _DEBUG_
+    cout << "Player come in:" << this->GetY() << this->GetX() << endl;
+#endif
 	for (auto i=trigger.begin(); i !=trigger.end(); ++i)
 	{
 		i->SetReciever(p);
@@ -61,4 +68,15 @@ void Road::ReadStream(std::istream& is)
 #ifdef _DEBUG_
     std::cout << "Road::ReadStream\n";
 #endif
+}
+
+void Road::PlayerByPass(Player *p)
+{
+    for (auto i=bypassTrigger.begin(); i != bypassTrigger.end(); ++i)
+    {
+        i->SetReciever(p);
+        i->Go();
+        if (i->Count() == 0)
+            bypassTrigger.erase(i);
+    }
 }
